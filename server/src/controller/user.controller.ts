@@ -1,7 +1,7 @@
 import Position from "../models/position.model";
 import User, { IUser } from "../models/user.model";
 import { Request, Response } from "express";
-import { fetchStockData } from "../utils/requests";
+import { fetchStockData, normalizeStockSymbol } from "../utils/requests";
 
 const getLedger = (req: Request, res: Response) => {
 	/* 
@@ -45,10 +45,11 @@ const getPortfolio = async (req: Request, res: Response) => {
 	// Create array of how many of each symbol (no duplicates)
 	let positionsNoDupes: { [key: string]: number } = {};
 	user!.positions.forEach((position) => {
-		if (positionsNoDupes[position.symbol]) {
-			positionsNoDupes[position.symbol] += position.quantity;
+		const symbol = normalizeStockSymbol(position.symbol);
+		if (positionsNoDupes[symbol]) {
+			positionsNoDupes[symbol] += position.quantity;
 		} else {
-			positionsNoDupes[position.symbol] = position.quantity;
+			positionsNoDupes[symbol] = position.quantity;
 		}
 	});
 
@@ -71,7 +72,7 @@ const getPortfolio = async (req: Request, res: Response) => {
 			// Create list of positions to send to frontend with data from user.positions plus the properties from the fetchStockData response
 			user!.positions.forEach((position) => {
 				const positionLiveData = values.find(
-					(value) => value.symbol === position.symbol,
+					(value) => value.symbol === normalizeStockSymbol(position.symbol),
 				);
 				if (positionLiveData) {
 					listOfPositions.push({
@@ -123,10 +124,11 @@ const addToWatchlist = (req: Request, res: Response) => {
 	*/
 	User.findById(req.body.userId)
 		.then((user) => {
-			if (user!.watchlist.includes(req.params.symbol)) {
+			const symbol = normalizeStockSymbol(req.params.symbol);
+			if (user!.watchlist.includes(symbol)) {
 				res.status(400).json({ message: "Already in watchlist" });
 			} else {
-				user!.watchlist.push(req.params.symbol);
+				user!.watchlist.push(symbol);
 				user!.save();
 				res.status(200).json({ message: "Added to watchlist" });
 			}
@@ -142,9 +144,10 @@ const removeFromWatchlist = (req: Request, res: Response) => {
 	*/
 	User.findById(req.body.userId)
 		.then((user) => {
-			if (user!.watchlist.includes(req.params.symbol)) {
+			const symbol = normalizeStockSymbol(req.params.symbol);
+			if (user!.watchlist.includes(symbol)) {
 				user!.watchlist = user!.watchlist.filter(
-					(symbol) => symbol !== req.params.symbol,
+					(watchlistSymbol) => watchlistSymbol !== symbol,
 				);
 				user!.save();
 				res.status(200).json({ message: "Removed from watchlist" });

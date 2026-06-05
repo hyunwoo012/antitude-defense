@@ -6,6 +6,10 @@ import userController from "./controller/user.controller";
 import stocksController from "./controller/stocks.controller";
 import newsController from "./controller/news.controller";
 import leaderboardController from "./controller/leaderboard.controller";
+import aiController from "./controller/ai.controller";
+import simulatorController from "./controller/simulator.controller";
+import tradingController from "./controller/trading.controller";
+import scenarioController from "./controller/scenario.controller";
 
 // Auth routes
 router.post(
@@ -14,6 +18,7 @@ router.post(
 	authController.signup,
 );
 router.post("/api/auth/login", authController.login);
+
 
 // User data routes
 router.get("/api/user/ledger", [authJwt.verifyToken], userController.getLedger);
@@ -46,15 +51,45 @@ router.post(
 	userController.removeFromWatchlist,
 );
 
+
 // Stocks routes
 router.get("/api/stocks/search/:query", stocksController.search);
 router.get("/api/stocks/:symbol/info", stocksController.getInfo);
 router.get("/api/stocks/:symbol/historical", stocksController.getHistorical);
+router.get("/api/stocks/:symbol/detail", stocksController.getDetail);
+router.get("/api/stocks/:symbol/orderbook", stocksController.getOrderBook);
+router.get("/api/scenarios/chapters", scenarioController.getChapters);
+router.get("/api/scenarios/recommended", scenarioController.getRecommended);
+router.get(
+	"/api/scenarios/chapters/:chapterId",
+	scenarioController.getChapterScenarios,
+);
+router.get("/api/scenarios/:scenarioId", scenarioController.getScenario);
+router.post(
+	"/api/scenarios/:scenarioId/decisions",
+	scenarioController.postDecision,
+);
+
+router.get("/api/trading/account", tradingController.getAccount);
+router.get("/api/trading/portfolio", tradingController.getUserPortfolio);
+router.get("/api/trading/orders", tradingController.getOrders);
+
+router.post("/api/trading/orders", tradingController.postOrder);
+router.post("/api/trading/orders/:orderId/cancel", tradingController.cancelOrder);
+router.post("/api/trading/orders/check-pending", tradingController.checkPending);
+router.post("/api/trading/reset", tradingController.resetDemo);
+
+router.post("/api/ai/stock-assistant", aiController.stockAssistant);
+
 
 router.post(
 	"/api/stocks/:symbol/buy",
 	[authJwt.verifyToken],
 	stocksController.buyStock,
+);
+router.post(
+	"/api/simulator/run-visual",
+	simulatorController.runVisualSimulation,
 );
 
 router.post(

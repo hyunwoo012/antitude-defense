@@ -100,7 +100,11 @@ STOTRA_JWT_SECRET=<random string of characters>
 STOTRA_TURNSTILE_SECRET=<api key for turnstile>
 # Optional: (for real-time news and stock data)
 STOTRA_NEWSFILTER_API=<api key for news descriptions>
-STOTRA_ALPHAVANTAGE_API=<api key for real-time stock data>
+STOTRA_KIS_APP_KEY=<KIS Developers app key>
+STOTRA_KIS_APP_SECRET=<KIS Developers app secret>
+STOTRA_KIS_ENV=real # real or demo
+# Optional: KRX default. Use NX for NXT or UN for integrated market if needed.
+STOTRA_KIS_MARKET_DIV_CODE=J
 ```
 
 4. Run the frontend and backend in separate terminals

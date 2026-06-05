@@ -12,9 +12,9 @@ import accounts from "../services/accounts.service";
 import tokens from "../services/tokens.service";
 import { useNavigate } from "react-router-dom";
 
-const formatter = new Intl.NumberFormat("en-US", {
+const formatter = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
-	currency: "USD",
+	currency: "KRW",
 });
 
 function PortfolioPreview() {

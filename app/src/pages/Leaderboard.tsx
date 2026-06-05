@@ -18,9 +18,9 @@ interface LeaderboardUser {
 	value: number;
 }
 
-const format = new Intl.NumberFormat("en-US", {
+const format = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
-	currency: "USD",
+	currency: "KRW",
 }).format;
 
 function Leaderboard() {

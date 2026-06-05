@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
-import { fetchStockData } from "../utils/requests";
+import { fetchStockData, normalizeStockSymbol } from "../utils/requests";
 
 // Cache the leaderboard for 10 minutes
 import NodeCache from "node-cache";
@@ -43,7 +43,8 @@ async function getLeaderboardTopN(
 
 	const stockPrices: { [key: string]: number } = {};
 	stockDataPoints.forEach((dataPoint) => {
-		stockPrices[dataPoint.symbol] = dataPoint.regularMarketPrice;
+		stockPrices[normalizeStockSymbol(dataPoint.symbol)] =
+			dataPoint.regularMarketPrice;
 	});
 
 	// 3. Compute portfolio values for each user using projection
@@ -56,7 +57,7 @@ async function getLeaderboardTopN(
 	usersWithPositions.forEach((user) => {
 		let totalValue = user.cash;
 		user.positions.forEach((position) => {
-			const currentPrice = stockPrices[position.symbol];
+			const currentPrice = stockPrices[normalizeStockSymbol(position.symbol)];
 			totalValue += currentPrice * position.quantity;
 		});
 		userValues.push({ username: user.username, value: totalValue });

@@ -1,9 +1,0 @@
-꼭봐라 이자식드랑 
-fastapi
-uvicorn
-mesa==2.2.4
-numpy
-requests
-pydantic
-networkx
-\\\pip install -r requirements.txt

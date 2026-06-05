@@ -22,9 +22,9 @@ import {
 } from "@chakra-ui/react";
 import { useLocation } from "react-router-dom";
 
-const formatter = new Intl.NumberFormat("en-US", {
+const formatter = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
-	currency: "USD",
+	currency: "KRW",
 });
 
 function TransactionPane(props: { symbol: string; price: number }) {

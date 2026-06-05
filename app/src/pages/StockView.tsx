@@ -23,9 +23,9 @@ import {
 	MinusIcon,
 } from "@chakra-ui/icons";
 
-const formatter = new Intl.NumberFormat("en-US", {
+const formatter = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
-	currency: "USD",
+	currency: "KRW",
 });
 
 function StockView() {

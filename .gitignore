@@ -1,4 +1,6 @@
+# -------------------------
 # Logs
+# -------------------------
 logs
 *.log
 npm-debug.log*
@@ -7,25 +9,71 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Runtime data
-node_modules
-app/node_modules
-server/node_modules
-dist
-dist-ssr
+# -------------------------
+# Node / Front / Server
+# -------------------------
+node_modules/
+app/node_modules/
+server/node_modules/
+dist/
+dist-ssr/
 *.local
 server/src/swagger-output.json
 
-# Editor directories and files
+# -------------------------
+# Python
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter / cache
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+
+# -------------------------
+# Python outputs / model artifacts
+# -------------------------
+simulator/outputs/
+simulator/data/processed/
+simulator/__pycache__/
+simulator/agent-training/__pycache__/
+simulator/scripts/__pycache__/
+simulator/simulator/__pycache__/
+
+# 필요하면 raw/labeled도 제외 가능
+# simulator/data/raw/
+# simulator/data/labeled/
+
+# -------------------------
+# Environment / secrets
+# -------------------------
+.env
+.env.*
+server/.env
+simulator/.env
+
+# -------------------------
+# OS / Editor
+# -------------------------
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Secrets
-server/.env
+
+server/.kis-token-cache.json
+simulator/.venv311/

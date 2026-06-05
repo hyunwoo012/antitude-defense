@@ -7,9 +7,9 @@ import { useLocation } from "react-router-dom";
 import { Box, Spinner, useTheme } from "@chakra-ui/react";
 // import { useColorMode } from "@chakra-ui/react";
 
-const formatter = new Intl.NumberFormat("en-US", {
+const formatter = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
-	currency: "USD",
+	currency: "KRW",
 });
 
 export default function StockChart(props: { symbol: string }) {

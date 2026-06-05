@@ -1,234 +1,257 @@
-import React, { RefObject, useEffect, useRef } from "react";
-import {
-	HStack,
-	Text,
-	IconButton,
-	useColorMode,
-	Flex,
-	Box,
-	Drawer,
-	DrawerBody,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerOverlay,
-	DrawerContent,
-	DrawerCloseButton,
-	useDisclosure,
-	Stack,
-	useTheme,
-	Menu,
-	MenuButton,
-	MenuItem,
-	MenuList,
-	Image,
-} from "@chakra-ui/react";
+import React from "react";
+import { Box, Button, Flex, IconButton, Text } from "@chakra-ui/react";
+import { Link as RouterLink, useLocation } from "react-router-dom";
+import { StarIcon, SunIcon } from "@chakra-ui/icons";
 
-import { Link, useLocation, NavLink } from "react-router-dom";
-import { HamburgerIcon, MoonIcon, StarIcon, SunIcon } from "@chakra-ui/icons";
-import SearchBox from "./SearchBox";
-import AccountMenu from "./AccountMenu";
+type MenuCircleProps = {
+	label: string;
+	to: string;
+	left: number;
+	active: boolean;
+};
 
-export default function Navbar() {
-	const { toggleColorMode, colorMode } = useColorMode();
-	const location = useLocation();
+const OUTER = 61.7;
+const INNER = 54.58;
+const INNER_OFFSET = 3.56;
 
-	// Mobile nav menu
-	const { isOpen, onOpen, onClose } = useDisclosure();
-	const mobileMenuBtn =
-		useRef<HTMLButtonElement>() as RefObject<HTMLButtonElement>;
-
-	useEffect(() => {
-		if (isOpen) {
-			onClose();
-		}
-	}, [location]);
-
+function MenuCircle({ label, to, left, active }: MenuCircleProps) {
 	return (
-		<HStack
-			className="Navbar"
-			borderBottomWidth="1px"
-			p="5"
+		<Box
+			as={RouterLink}
+			to={to}
+			position="absolute"
+			left={`${left}px`}
+			top="18px"
+			w={`${OUTER}px`}
+			h={`${OUTER}px`}
+			borderRadius="full"
+			bg="white"
 			display="flex"
-			justifyContent="space-between"
+			alignItems="center"
+			justifyContent="center"
+			textDecoration="none"
+			zIndex={2}
 		>
-			{/* Left Side */}
-			<Flex gap={7}>
-				<Text as={Link} to="/" display="flex" alignItems="center" gap="1">
-					<Image src="/logo.svg" alt="Stotra Logo" boxSize="6" />
-					<Text fontWeight="bold">정우</Text>
-				</Text>
-				<NavLink
-					style={({ isActive }) => {
-						return {
-							fontWeight: isActive ? "500" : "",
-						};
-					}}
-					to="/prototype"
+			<Box
+				w={`${INNER}px`}
+				h={`${INNER}px`}
+				borderRadius="full"
+				bg={active ? "#FFEEF9" : "#D9D9D9"}
+				display="flex"
+				alignItems="center"
+				justifyContent="center"
+				fontSize="9px"
+				fontWeight="700"
+				color="black"
+				fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
+				transition="0.15s ease"
+				_hover={{
+					bg: active ? "#FFEEF9" : "#eeeeee",
+				}}
+			>
+				{label}
+			</Box>
+		</Box>
+	);
+}
+
+function AntFace() {
+	return (
+		<Box
+			position="absolute"
+			left="0"
+			top="14px"
+			w="62px"
+			h="62px"
+			zIndex={10}
+			pointerEvents="none"
+		>
+			{/* 더듬이 */}
+			<svg
+				width="50"
+				height="48"
+				viewBox="0 0 72 40"
+				style={{
+					position: "absolute",
+					left: "14px",
+					top: "-24px",
+					overflow: "visible",
+					zIndex: 20,
+				}}
+			>
+				<path
+					d="M18 44 C16 26 22 12 30 4"
+					stroke="black"
+					strokeWidth="2.2"
+					fill="none"
+					strokeLinecap="round"
+				/>
+				<path
+					d="M34 44 C42 24 50 14 62 8"
+					stroke="black"
+					strokeWidth="2.2"
+					fill="none"
+					strokeLinecap="round"
+				/>
+
+				<circle cx="30" cy="4" r="4" fill="black" />
+				<circle cx="62" cy="8" r="4" fill="black" />
+			</svg>
+
+			{/* 흰 테두리 */}
+			<Box
+				position="absolute"
+				left="0"
+				top="1"
+				w="62px"
+				h="62px"
+				borderRadius="full"
+				bg="white"
+			>
+				{/* 검은 얼굴 */}
+				<Box
+					position="absolute"
+					left="4px"
+					top="4px"
+					w="54px"
+					h="54px"
+					borderRadius="full"
+					bg="black"
 				>
-					<Text display={{ base: "none", md: "block" }}>Dashboard</Text>
-				</NavLink>
-				<NavLink
-					style={({ isActive }) => {
-						return {
-							fontWeight: isActive ? "500" : "",
-						};
-					}}
-					to="/leaderboard"
-				>
-					<Text display={{ base: "none", md: "block" }}>Leaderboard</Text>
-				</NavLink>
-			</Flex>
-
-			{/* Center */}
-			<SearchBox />
-
-			{/* Right Side */}
-			<Box>
-				<HStack spacing="2" display={{ base: "none", md: "flex" }}>
-					<IconButton
-						variant="outline"
-						aria-label="Toggle dark mode"
-						icon={colorMode == "light" ? <SunIcon /> : <MoonIcon />}
-						onClick={() => toggleColorMode()}
-					/>
-					<Menu>
-						<MenuButton
-							as={IconButton}
-							aria-label="Options"
-							icon={<StarIcon />}
-							variant="outline"
-						/>
-						<MenuList minW="auto" px="2" pt="1">
-							{[
-								"red",
-								"orange",
-								"yellow",
-								"green",
-								"blue",
-								"teal",
-								"cyan",
-								"purple",
-								"pink",
-							].map((color) => (
-								<MenuItem
-									mt="1"
-									as={IconButton}
-									aria-label={color}
-									variant="ghost"
-									bg={color + ".500"}
-									_hover={{
-										border: "3px solid",
-										borderColor: color + ".300",
-										bg: color + ".400",
-									}}
-									key={color}
-									onClick={() => {
-										localStorage.setItem("accentColor", color);
-										window.location.reload();
-									}}
-								></MenuItem>
-							))}
-						</MenuList>
-					</Menu>
-					<AccountMenu />
-				</HStack>
-
-				<Box display={{ base: "block", md: "none" }}>
-					<IconButton
-						aria-label="Hamburger menu"
-						icon={<HamburgerIcon />}
-						ref={mobileMenuBtn}
-						colorScheme={
-							useTheme()["components"]["Link"]["baseStyle"]["color"].split(
-								"."
-							)[0]
-						}
-						onClick={onOpen}
-					/>
-					<Drawer
-						isOpen={isOpen}
-						placement="top"
-						onClose={onClose}
-						finalFocusRef={mobileMenuBtn}
+					{/* 흰 눈 */}
+					<Box
+						position="absolute"
+						left="15px"
+						top="10px"
+						w="22px"
+						h="22px"
+						borderRadius="full"
+						bg="white"
 					>
-						<DrawerOverlay />
-						<DrawerContent>
-							<DrawerCloseButton />
-							<DrawerHeader>
-								<Text as={Link} to="/">
-									<Text fontWeight="bold">정우</Text>
-								</Text>
-							</DrawerHeader>
-
-							<DrawerBody>
-								<Stack spacing="2.5">
-									<Text as={Link} to="/">
-										<Text>Dashboard</Text>
-									</Text>
-									<Text as={Link} to="/leaderboard">
-									 <Text>Lederbodard</Text>
-									 </Text>
-									<Text as={Link} to="/leaderboard">
-										<Text>Leaderboard</Text>
-									</Text>
-								</Stack>
-							</DrawerBody>
-
-							<DrawerFooter>
-								<HStack spacing="2" width="100%">
-									<IconButton
-										variant="outline"
-										aria-label="Toggle dark mode"
-										icon={colorMode == "light" ? <SunIcon /> : <MoonIcon />}
-										onClick={() => toggleColorMode()}
-									/>
-									<Menu>
-										<MenuButton
-											as={IconButton}
-											aria-label="Options"
-											icon={<StarIcon />}
-											variant="outline"
-										/>
-										<MenuList minW="auto" px="2" pt="1">
-											{[
-												"red",
-												"orange",
-												"yellow",
-												"green",
-												"blue",
-												"teal",
-												"cyan",
-												"purple",
-												"pink",
-											].map((color) => (
-												<MenuItem
-													mt="1"
-													as={IconButton}
-													aria-label={color}
-													variant="ghost"
-													bg={"var(--chakra-colors-" + color + "-500)"}
-													_hover={{
-														border: "3px solid",
-														borderColor:
-															"var(--chakra-colors-" + color + "-300)",
-														bg: "var(--chakra-colors-" + color + "-400)",
-													}}
-													key={color}
-													onClick={() => {
-														localStorage.setItem("accentColor", color);
-														window.location.reload();
-													}}
-												></MenuItem>
-											))}
-										</MenuList>
-									</Menu>
-									<AccountMenu />
-								</HStack>
-							</DrawerFooter>
-						</DrawerContent>
-					</Drawer>
+						{/* 검은 눈동자 */}
+						<Box
+							position="absolute"
+							right="2px"
+							top="4px"
+							w="13px"
+							h="13px"
+							borderRadius="full"
+							bg="black"
+						>
+							{/* 반짝이 */}
+							<Box
+								position="absolute"
+								right="2px"
+								top="4px"
+								w="3px"
+								h="3px"
+								borderRadius="full"
+								bg="white"
+							/>
+						</Box>
+					</Box>
 				</Box>
 			</Box>
-		</HStack>
+		</Box>
+	);
+}
+function AntitudeMenu() {
+	const location = useLocation();
+
+	const isActive = (path: string) => {
+		if (path === "/exchange") {
+			return (
+				location.pathname === "/" ||
+				location.pathname.startsWith("/exchange")
+			);
+		}
+
+		return location.pathname.startsWith(path);
+	};
+
+	return (
+		<Box
+			position="relative"
+			w="260px"
+			h="82px"
+			flexShrink={0}
+			fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
+		>
+			<AntFace />
+
+			<MenuCircle
+	label="거래소"
+	to="/exchange"
+	left={50}
+	active={isActive("/exchange")}
+/>
+
+<MenuCircle
+	label="시나리오"
+	to="/scenario"
+	left={102}
+	active={isActive("/scenario")}
+/>
+
+<MenuCircle
+	label="마이페이지"
+	to="/login"
+	left={154}
+	active={isActive("/mypage") || isActive("/login")}
+/>
+		</Box>
+	);
+}
+
+export default function Navbar() {
+	return (
+		<Box
+			as="header"
+			w="100%"
+			bg="white"
+			borderBottom="1px solid #edf2f7"
+			px={{ base: 4, md: 6 }}
+			py="2px"
+			minH="88px"
+			overflow="visible"
+			fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
+		>
+			<Flex align="center" justify="space-between" h="100%">
+	<Flex align="center" gap="14px">
+		<Text
+			fontFamily="'SUIT', 'Suite', 'Pretendard', sans-serif"
+			fontSize="24px"
+			fontWeight="900"
+			letterSpacing="-0.04em"
+			color="black"
+			whiteSpace="nowrap"
+			lineHeight="0"
+			mt="-2px"
+		>
+			앤티튜드
+		</Text>
+
+		<AntitudeMenu />
+	</Flex>
+
+	<Flex align="center" gap="2">
+					<IconButton
+						aria-label="toggle color mode"
+						icon={<SunIcon />}
+						variant="outline"
+						size="sm"
+					/>
+					<IconButton
+						aria-label="favorite"
+						icon={<StarIcon />}
+						variant="outline"
+						size="sm"
+					/>
+					<Button as={RouterLink} to="/login" size="sm" variant="outline">
+						Login
+					</Button>
+				</Flex>
+			</Flex>
+		</Box>
 	);
 }

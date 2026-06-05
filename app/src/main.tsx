@@ -9,8 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
 
-import "@fontsource-variable/manrope";
-import "@fontsource-variable/inter";
+
 
 const accentColor = localStorage.getItem("accentColor") || "cyan";
 
@@ -19,14 +18,17 @@ const customTheme = extendTheme(
 	{
 		styles: {
 			global: () => ({
+				"html, body, #root": {
+					fontFamily: "'SUIT', 'Pretendard', sans-serif",
+				},
 				body: {
 					bg: useColorModeValue("gray.50", "initial"),
 				},
 			}),
 		},
 		fonts: {
-			heading: `'Manrope Variable', sans-serif`,
-			body: `'Inter Variable', sans-serif`,
+			heading: `'SUIT', 'Pretendard', sans-serif`,
+			body: `'SUIT', 'Pretendard', sans-serif`,
 		},
 		components: {
 			Spinner: {

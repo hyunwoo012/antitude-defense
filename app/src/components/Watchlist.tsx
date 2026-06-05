@@ -14,9 +14,9 @@ import {
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 
-const format = new Intl.NumberFormat("en-US", {
+const format = new Intl.NumberFormat("ko-KR", {
 	style: "currency",
-	currency: "USD",
+	currency: "KRW",
 }).format;
 
 interface WatchlistItem {

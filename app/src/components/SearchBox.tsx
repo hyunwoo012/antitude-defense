@@ -102,7 +102,7 @@ function SearchBox() {
 						<SearchIcon />
 					</InputLeftElement>
 					<Input
-						placeholder="Search (ex. AAPL)"
+						placeholder="Search (ex. 005930)"
 						ref={initialFocusRef}
 						onBlur={onToggle}
 						onFocus={onToggle}

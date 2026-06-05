@@ -1,123 +1,277 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
+import { fetchOrderBookData } from "../utils/requests";
 
 import {
 	fetchStockData,
 	fetchHistoricalStockData,
+	normalizeStockSymbol,
 	searchStocks,
 } from "../utils/requests";
 import { ITransaction } from "../models/transaction.model";
 import { IPosition } from "../models/position.model";
-import yahooFinance from "yahoo-finance2";
+import {
+	getChartDataWithCache,
+	normalizeChartPeriod,
+	normalizeChartInterval,
+} from "../services/stockChartCache.service";
+import { getStockDetailWithCache } from "../services/stockDetail.service";
+
+type Period = "1d" | "5d" | "1m" | "6m" | "YTD" | "1y" | "all";
+
+const allowedPeriods: Period[] = ["1d", "5d", "1m", "6m", "YTD", "1y", "all"];
+
+const getErrorMessage = (error: any): string => {
+	return (
+		error?.response?.data?.msg1 ||
+		error?.response?.data?.message ||
+		error?.message ||
+		String(error)
+	);
+};
+
+const getStatusCode = (error: any): number => {
+	return error?.statusCode || error?.response?.status || 500;
+};
+const getOrderBook = async (req: Request, res: Response) => {
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+
+	if (!symbol) {
+		return res.status(400).json({
+			success: false,
+			error: "종목 코드가 필요합니다.",
+		});
+	}
+
+	try {
+		const data = await fetchOrderBookData(symbol);
+
+		return res.status(200).json({
+			success: true,
+			symbol,
+			data,
+		});
+	} catch (error) {
+		console.error(`getOrderBook error: ${symbol}`, error);
+
+		return sendError(res, error, "호가 정보를 불러오지 못했습니다.", {
+			symbol,
+		});
+	}
+};
+
+const sendError = (
+	res: Response,
+	error: any,
+	defaultMessage: string,
+	extra: Record<string, any> = {},
+) => {
+	const statusCode = getStatusCode(error);
+	const message = getErrorMessage(error);
+
+	return res.status(statusCode >= 400 && statusCode < 600 ? statusCode : 500).json({
+		success: false,
+		error: defaultMessage,
+		message,
+		...extra,
+	});
+};
 
 const getInfo = async (req: Request, res: Response) => {
-	/* 
+	/*
 	#swagger.tags = ['Stock Data']
 	*/
-	const symbol = req.params.symbol;
-	const quote = await fetchStockData(symbol);
-	res.status(200).send(quote);
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+
+	if (!symbol) {
+		return res.status(400).json({
+			success: false,
+			error: "종목 코드가 필요합니다.",
+		});
+	}
+
+	try {
+		const quote = await fetchStockData(symbol);
+
+		return res.status(200).json({
+			success: true,
+			data: quote,
+		});
+	} catch (error) {
+		console.error(`getInfo controller error: ${symbol}`, error);
+
+		return sendError(res, error, "종목 정보를 불러오지 못했습니다.", {
+			symbol,
+		});
+	}
 };
 
 const getHistorical = async (req: Request, res: Response) => {
-	/* 
+	/*
 	#swagger.tags = ['Stock Data']
 	*/
-	const symbol = req.params.symbol;
-	const period = req.query.period?.toString() as
-		| "1d"
-		| "5d"
-		| "1m"
-		| "6m"
-		| "YTD"
-		| "1y"
-		| "all"
-		| undefined;
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+
+	const period = normalizeChartPeriod(req.query.period?.toString());
+	const interval = normalizeChartInterval(req.query.interval?.toString(), period);
+
+	if (!symbol) {
+		return res.status(400).json({
+			success: false,
+			error: "종목 코드가 필요합니다.",
+		});
+	}
 
 	try {
-		const historicalData = await fetchHistoricalStockData(symbol, period);
+		const chartResult = await getChartDataWithCache(symbol, period, interval);
 
-		res.status(200).send(historicalData);
+		return res.status(200).json({
+			success: true,
+			symbol: chartResult.symbol,
+			period: chartResult.period,
+			interval: chartResult.interval,
+			source: chartResult.source,
+			fetchedAt: chartResult.fetchedAt,
+			data: chartResult.points,
+		});
 	} catch (error) {
-		console.error("Error fetching " + symbol + " stock data:", error);
-		res.status(500).send("Error fetching " + symbol + " stock data:" + error);
+		console.error(`getHistorical controller error: ${symbol}`, error);
+
+		return sendError(res, error, "차트 데이터를 불러오지 못했습니다.", {
+			symbol,
+			period,
+			interval,
+		});
+	}
+};
+const getDetail = async (req: Request, res: Response) => {
+	/*
+	#swagger.tags = ['Stock Data']
+	*/
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+
+	if (!symbol) {
+		return res.status(400).json({
+			success: false,
+			error: "종목 코드가 필요합니다.",
+		});
+	}
+
+	try {
+		const result = await getStockDetailWithCache(symbol);
+
+		return res.status(200).json({
+			success: true,
+			symbol,
+			source: result.source,
+			data: result.detail,
+		});
+	} catch (error) {
+		console.error(`getDetail controller error: ${symbol}`, error);
+
+		return sendError(res, error, "종목 상세 정보를 불러오지 못했습니다.", {
+			symbol,
+		});
 	}
 };
 
 const buyStock = async (req: Request, res: Response) => {
-	/* 
+	/*
 	#swagger.tags = ['Stock Transaction']
 	*/
-	const symbol = req.params.symbol;
-	const quantity = req.body.quantity;
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+	const quantity = Number(req.body.quantity);
+
+	if (!symbol || !Number.isFinite(quantity) || quantity <= 0) {
+		return res.status(400).json({
+			success: false,
+			message: "유효한 종목 코드와 수량이 필요합니다.",
+		});
+	}
 
 	try {
 		const data = await fetchStockData(symbol);
-		const price = data.regularMarketPrice;
+		const price = data.regularMarketPrice || data.price;
 
 		let user = await User.findById(req.body.userId);
-		user = user!;
+
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: "사용자를 찾을 수 없습니다.",
+			});
+		}
 
 		if (user.cash! < price * quantity) {
-			res.status(400).send({ message: "Not enough cash" });
-		} else {
-			user.cash! -= price * quantity;
-
-			// Add sebuyll transaction to ledger
-			const transaction: ITransaction = {
-				symbol,
-				price,
-				quantity,
-				type: "buy",
-				date: Date.now(),
-			} as ITransaction;
-
-			user.ledger.push(transaction);
-
-			// Add position to user
-			const position = {
-				symbol,
-				quantity,
-				purchasePrice: price,
-				purchaseDate: Date.now(),
-			} as IPosition;
-
-			user.positions.push(position);
-
-			user
-				.save()
-				.then((user) => {
-					if (user) {
-						res.status(200).send({ message: "Stock was bought successfully!" });
-					}
-				})
-				.catch((err) => {
-					if (err) {
-						res.status(500).send({ message: err });
-					}
-				});
+			return res.status(400).json({
+				success: false,
+				message: "Not enough cash",
+			});
 		}
+
+		user.cash! -= price * quantity;
+
+		const transaction: ITransaction = {
+			symbol,
+			price,
+			quantity,
+			type: "buy",
+			date: Date.now(),
+		} as ITransaction;
+
+		user.ledger.push(transaction);
+
+		const position = {
+			symbol,
+			quantity,
+			purchasePrice: price,
+			purchaseDate: Date.now(),
+		} as IPosition;
+
+		user.positions.push(position);
+
+		await user.save();
+
+		return res.status(200).json({
+			success: true,
+			message: "Stock was bought successfully!",
+		});
 	} catch (error) {
-		console.error("Error fetching " + symbol + " stock data:", error);
-		res.status(500).send("Error fetching " + symbol + " stock data:" + error);
+		console.error(`buyStock controller error: ${symbol}`, error);
+
+		return sendError(res, error, "매수 처리 중 오류가 발생했습니다.", {
+			symbol,
+		});
 	}
 };
 
 const sellStock = async (req: Request, res: Response) => {
-	/* 
+	/*
 	#swagger.tags = ['Stock Transaction']
 	*/
-	const symbol = req.params.symbol;
-	var quantity = req.body.quantity;
+	const symbol = normalizeStockSymbol(req.params.symbol || "");
+	let quantity = Number(req.body.quantity);
+
+	if (!symbol || !Number.isFinite(quantity) || quantity <= 0) {
+		return res.status(400).json({
+			success: false,
+			message: "유효한 종목 코드와 수량이 필요합니다.",
+		});
+	}
 
 	try {
 		const data = await fetchStockData(symbol);
-		const price = data.regularMarketPrice;
+		const price = data.regularMarketPrice || data.price;
 
 		let user = await User.findById(req.body.userId);
-		user = user!;
 
-		// Check if user has enough shares to sell across all positions
+		if (!user) {
+			return res.status(404).json({
+				success: false,
+				message: "사용자를 찾을 수 없습니다.",
+			});
+		}
+
 		let quantityOwned = 0;
 		user.positions.forEach((position) => {
 			if (position.symbol === symbol) {
@@ -126,13 +280,14 @@ const sellStock = async (req: Request, res: Response) => {
 		});
 
 		if (quantityOwned < quantity) {
-			res.status(400).send({ message: "Not enough shares" });
-			return;
+			return res.status(400).json({
+				success: false,
+				message: "Not enough shares",
+			});
 		}
 
 		user.cash! += price * quantity;
 
-		// Add sell transaction to ledger
 		const transaction: ITransaction = {
 			symbol,
 			price,
@@ -143,7 +298,6 @@ const sellStock = async (req: Request, res: Response) => {
 
 		user.ledger.push(transaction);
 
-		// Sell quantity of shares (decrement for each iteration of the loop) split between all positions of the same symbol
 		for (let i = 0; i < user.positions.length; i++) {
 			if (user.positions[i].symbol === symbol) {
 				if (user.positions[i].quantity > quantity) {
@@ -157,51 +311,56 @@ const sellStock = async (req: Request, res: Response) => {
 			}
 		}
 
-		user
-			.save()
-			.then((user) => {
-				if (user) {
-					res.send({ message: "Stock was sold successfully!" });
-				}
-			})
-			.catch((err) => {
-				if (err) {
-					res.status(500).send({ message: err });
-				}
-			});
+		await user.save();
+
+		return res.status(200).json({
+			success: true,
+			message: "Stock was sold successfully!",
+		});
 	} catch (error) {
-		console.error("Error fetching " + symbol + " stock data:", error);
-		res.status(500).send("Error fetching " + symbol + " stock data:" + error);
+		console.error(`sellStock controller error: ${symbol}`, error);
+
+		return sendError(res, error, "매도 처리 중 오류가 발생했습니다.", {
+			symbol,
+		});
 	}
 };
 
 const search = async (req: Request, res: Response) => {
 	/*
-    #swagger.tags = ['Stock Data']
-    */
+	#swagger.tags = ['Stock Data']
+	*/
 	const { query } = req.params;
 
 	if (!query) {
-		res.status(400).send({ message: "No query provided" });
-		return;
+		return res.status(400).json({
+			success: false,
+			message: "No query provided",
+		});
 	}
 
 	try {
 		const quotes = await searchStocks(query);
 
-		let stocksAndCurrencies = (quotes || []).filter((quote: any) => {
-			return (
-				quote.quoteType &&
-				quote.quoteType !== "FUTURE" &&
-				quote.quoteType !== "Option"
-			);
+		return res.status(200).json({
+			success: true,
+			data: quotes || [],
 		});
+	} catch (error) {
+		console.error("search controller error:", error);
 
-		res.status(200).send(stocksAndCurrencies);
-	} catch (err) {
-		console.log("search controller error:", err);
-		res.status(200).send([]);
+		return sendError(res, error, "종목 검색 중 오류가 발생했습니다.", {
+			query,
+		});
 	}
 };
 
-export default { getInfo, getHistorical, buyStock, sellStock, search };
+export default {
+	getInfo,
+	getHistorical,
+	getDetail,
+	getOrderBook,
+	buyStock,
+	sellStock,
+	search,
+};
